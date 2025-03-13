@@ -21,12 +21,6 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
     
     Background tensor (bg_color) must be on GPU!
     """
- 
-    # Create zero tensor. We will use it to make pytorch return gradients of the 2D (screen-space) means
-    # print("rot:")
-    # print(pc.get_rotation.grad)
-    # print("opacity:")
-    # print(pc.get_opacity.grad)
 
     screenspace_points = torch.zeros_like(pc.get_means3D, dtype=pc.get_means3D.dtype, requires_grad=True, device="cuda") + 0
 
@@ -56,16 +50,7 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
 
     rasterizer = GaussianRasterizer(raster_settings=raster_settings)
 
-    polar_coord = pc.get_polar_coord
     w = pc.get_w
-    theta_coord = polar_coord[:, 0]
-    phi_coord = polar_coord[:, 1]
-
-    x = torch.sin(theta_coord) * torch.cos(phi_coord)
-    y = torch.sin(theta_coord) * torch.sin(phi_coord)
-    z = torch.cos(theta_coord)
-
-    points_hom = torch.stack([x, y, z, w], dim=1)
     means2D = screenspace_points
     opacity = pc.get_opacity
 
@@ -97,10 +82,8 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
     else:
         colors_precomp = override_color
 
-    # Rasterize visible Gaussians to image, obtain their radii (on screen). 
-    # rendered_image, radii, depth, median_depth, opacity = rasterizer(
+    # Rasterize visible Gaussians to image, obtain their radii (on screen).
     rendered_image, radii = rasterizer(
-        # points_hom = points_hom,
         means3D = pc.get_means3D,
         means2D = means2D,
         shs = shs,
@@ -114,9 +97,6 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
     # Those Gaussians that were frustum culled or had a radius of 0 were not visible.
     # They will be excluded from value updates used in the splitting criteria.
     return {"render": rendered_image,
-            # "depth": depth,
-            # "median_depth": median_depth,
-            # "opacity": opacity,
             "viewspace_points": screenspace_points,
             "visibility_filter" : radii > 0,
             "radii": radii}
