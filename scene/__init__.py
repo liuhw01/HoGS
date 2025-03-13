@@ -49,16 +49,6 @@ class Scene:
         else:
             assert False, "Could not recognize scene type!"
 
-        # regularize camera position to pose the first camera center at (0, 0, 0)
-        # camera_pos_init = np.asarray((0, 0, -2))
-        # camera_pos_init = np.asarray((0, 500, 0))
-        # for i in range(len(scene_info.train_cameras)):
-        #     new_T = scene_info.train_cameras[i].T - scene_info.train_cameras[i].R * camera_pos_init
-        #     scene_info.train_cameras[i]._replace(T=new_T)
-        # for i in range(len(scene_info.test_cameras)):
-        #     new_T = scene_info.test_cameras[i].T - scene_info.test_cameras[i].R * camera_pos_init
-        #     scene_info.test_cameras[i]._replace(T=new_T)
-
 
 
         if not self.loaded_iter:
@@ -93,7 +83,6 @@ class Scene:
                                                            "iteration_" + str(self.loaded_iter),
                                                            "point_cloud.ply"))
         else:
-            # self.gaussians.create_from_pcd(scene_info.point_cloud, self.cameras_extent, camera_pos_init)
             self.gaussians.create_from_pcd(scene_info.point_cloud, self.cameras_extent)
 
     def save(self, iteration):

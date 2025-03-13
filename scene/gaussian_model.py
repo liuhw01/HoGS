@@ -284,6 +284,29 @@ class GaussianModel:
         el = PlyElement.describe(elements, 'vertex')
         PlyData([el]).write(path)
 
+    def save_ply_3dgs(self, path):
+        mkdir_p(os.path.dirname(path))
+
+        xyz = self.get_means3D.detach().cpu().numpy()
+        # xyz_raw = self.get_xyz.detach().cpu().numpy()
+        normals = np.zeros_like(xyz)
+        f_dc = self._features_dc.detach().transpose(1, 2).flatten(start_dim=1).contiguous().cpu().numpy()
+        f_rest = self._features_rest.detach().transpose(1, 2).flatten(start_dim=1).contiguous().cpu().numpy()
+        opacities = self._opacity.detach().cpu().numpy()
+        scale_w = self.get_scaling * self.get_w_inv.unsqueeze(1)
+        scale_w_log = torch.log(scale_w)
+        scale = scale_w_log.detach().cpu().numpy()
+        w = self.get_w.unsqueeze(1).detach().cpu().numpy()
+        rotation = self._rotation.detach().cpu().numpy()
+
+        dtype_full = [(attribute, 'f4') for attribute in self.construct_list_of_attributes_3dgs()]
+
+        elements = np.empty(xyz.shape[0], dtype=dtype_full)
+        attributes = np.concatenate((xyz, normals, f_dc, f_rest, opacities, scale, rotation ), axis=1)
+        elements[:] = list(map(tuple, attributes))
+        el = PlyElement.describe(elements, 'vertex')
+        PlyData([el]).write(path)
+
     def reset_opacity(self):
         opacities_new = inverse_sigmoid(torch.min(self.get_opacity, torch.ones_like(self.get_opacity) * 0.01))
         optimizable_tensors = self.replace_tensor_to_optimizer(opacities_new, "opacity")

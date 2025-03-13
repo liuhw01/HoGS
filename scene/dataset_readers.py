@@ -326,17 +326,6 @@ def readCamerasFromTransforms(path, dir_type, white_background, extension=".png"
                                     image_path=image_path, image_name=name, width=image.size[0],
                                     height=image.size[1]))
 
-        # image = imageio.v2.imread(image_path)[..., :3]
-        # image = Image.fromarray(np.array(image, dtype=np.byte), "RGB")
-        # fovy = focal2fov(fov2focal(fovx, image.size[0]), image.size[1])
-        # FovY = fovy
-        # FovX = fovx
-        #
-        #
-        # cam_infos.append(CameraInfo(uid=idx, R=R, T=T, FovY=FovY, FovX=FovX, image=image,
-        #                             image_path=image_path, image_name=name, width=image.size[0],
-        #                             height=image.size[1]))
-
     return cam_infos
 
 
@@ -360,7 +349,7 @@ def readNerfSyntheticInfo(path, white_background, eval, extension=".png"):
         print(f"Generating random point cloud ({num_pts})...")
 
         # We create random points inside the bounds of the synthetic Blender scenes
-        xyz = np.random.random((num_pts, 3)) * 0#* 2.6 - 1.3
+        xyz = np.random.random((num_pts, 3)) * 0
         shs = np.random.random((num_pts, 3)) / 255.0
         pcd = BasicPointCloud(points=xyz, colors=SH2RGB(shs), normals=np.zeros((num_pts, 3)))
 
