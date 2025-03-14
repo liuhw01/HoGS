@@ -232,99 +232,45 @@ def readCamerasFromTransforms0(path, transformsfile, white_background, extension
 
 
 def readCamerasFromTransforms(path, dir_type, white_background, extension=".png"):
-    # cam_infos = []
-    #
-    # all_name_lst = [file_name.split('.')[0] for file_name in os.listdir(os.path.join(path, dir_type, 'data')) if
-    #                 file_name.endswith('.pt')]
-    #
-    # fovx = 0.0
-    #
-    # for idx, name in enumerate(all_name_lst):
-    #     check_data = torch.load(os.path.join(path, dir_type, 'data1', name + '.pt'))
-    #     camera_data = check_data
-    #     camera_angle_x = float(camera_data['camera_angle_x'])
-    #
-    #     if camera_angle_x != 0.0:
-    #         fovx = camera_angle_x
-    #
-    #     # NeRF 'transform_matrix' is a camera-to-world transform
-    #     c2w = np.array(camera_data["transform_matrix"])
-    #     # change from OpenGL/Blender camera axes (Y up, Z back) to COLMAP (Y down, Z forward)
-    #     c2w[:, 1] *= -1
-    #     c2w[:, 2] *= -1
-    #
-    #     # get the world-to-camera transform and set R, T
-    #     w2c = np.linalg.inv(c2w)
-    #     R = np.transpose(w2c[:3, :3])  # R is stored transposed due to 'glm' in CUDA code
-    #     T = w2c[:3, 3]
-    #
-    #     image_path = os.path.join(path, dir_type, 'image4', name + extension)
-    #     image = Image.open(image_path)
-    #
-    #     im_data = np.array(image.convert("RGBA"))
-    #
-    #     image = Image.fromarray(np.array(im_data[:, :, :3], dtype=np.byte), "RGB")
-    #
-    #     fovy = focal2fov(fov2focal(fovx, image.size[0]), image.size[1])
-    #     FovY = fovy
-    #     FovX = fovx
-    #
-    #     cam_infos.append(CameraInfo(uid=idx, R=R, T=T, FovY=FovY, FovX=FovX, image=image,
-    #                                 image_path=image_path, image_name=name, width=image.size[0],
-    #                                 height=image.size[1]))
-    #
-    #     # image = imageio.v2.imread(image_path)[..., :3]
-    #     # image = Image.fromarray(np.array(image, dtype=np.byte), "RGB")
-    #     # fovy = focal2fov(fov2focal(fovx, image.size[0]), image.size[1])
-    #     # FovY = fovy
-    #     # FovX = fovx
-    #     #
-    #     #
-    #     # cam_infos.append(CameraInfo(uid=idx, R=R, T=T, FovY=FovY, FovX=FovX, image=image,
-    #     #                             image_path=image_path, image_name=name, width=image.size[0],
-    #     #                             height=image.size[1]))
-    #
-    # return cam_infos
     cam_infos = []
 
-    all_name_lst = [file_name.split('.')[0] for file_name in os.listdir(os.path.join(path, dir_type, 'image4')) if
-                    file_name.endswith('.png')]
+    with open(os.path.join(path, transformsfile)) as json_file:
+        contents = json.load(json_file)
+        fovx = contents["camera_angle_x"]
 
-    fovx = 0.0
+        frames = contents["frames"]
+        for idx, frame in enumerate(frames):
+            cam_name = os.path.join(path, frame["file_path"] + extension)
 
-    for idx, name in enumerate(all_name_lst):
-        check_data = np.load(os.path.join(path, dir_type, 'data_np', name + '.npz'), allow_pickle=True)
-        camera_data = check_data['Cameras'].item()  # Use `.item()` if the data was saved as a dictionary
-        camera_angle_x = float(camera_data['camera_angle_x'])
+            # NeRF 'transform_matrix' is a camera-to-world transform
+            c2w = np.array(frame["transform_matrix"])
+            # change from OpenGL/Blender camera axes (Y up, Z back) to COLMAP (Y down, Z forward)
+            c2w[:3, 1:3] *= -1
 
-        if camera_angle_x != 0.0:
-            fovx = camera_angle_x
+            # get the world-to-camera transform and set R, T
+            w2c = np.linalg.inv(c2w)
+            R = np.transpose(w2c[:3, :3])  # R is stored transposed due to 'glm' in CUDA code
+            T = w2c[:3, 3]
 
-        # NeRF 'transform_matrix' is a camera-to-world transform
-        c2w = np.array(camera_data["transform_matrix"])
-        # change from OpenGL/Blender camera axes (Y up, Z back) to COLMAP (Y down, Z forward)
-        c2w[:, 1] *= -1
-        c2w[:, 2] *= -1
+            image_path = os.path.join(path, cam_name)
+            image_name = Path(cam_name).stem
+            image = Image.open(image_path)
 
-        # get the world-to-camera transform and set R, T
-        w2c = np.linalg.inv(c2w)
-        R = np.transpose(w2c[:3, :3])  # R is stored transposed due to 'glm' in CUDA code
-        T = w2c[:3, 3]
+            im_data = np.array(image.convert("RGBA"))
 
-        image_path = os.path.join(path, dir_type, 'image4', name + extension)
-        image = Image.open(image_path)
+            bg = np.array([1, 1, 1]) if white_background else np.array([0, 0, 0])
 
-        im_data = np.array(image.convert("RGBA"))
+            norm_data = im_data / 255.0
+            arr = norm_data[:, :, :3] * norm_data[:, :, 3:4] + bg * (1 - norm_data[:, :, 3:4])
+            image = Image.fromarray(np.array(arr * 255.0, dtype=np.byte), "RGB")
 
-        image = Image.fromarray(np.array(im_data[:, :, :3], dtype=np.byte), "RGB")
+            fovy = focal2fov(fov2focal(fovx, image.size[0]), image.size[1])
+            FovY = fovy
+            FovX = fovx
 
-        fovy = focal2fov(fov2focal(fovx, image.size[0]), image.size[1])
-        FovY = fovy
-        FovX = fovx
-
-        cam_infos.append(CameraInfo(uid=idx, R=R, T=T, FovY=FovY, FovX=FovX, image=image,
-                                    image_path=image_path, image_name=name, width=image.size[0],
-                                    height=image.size[1]))
+            cam_infos.append(CameraInfo(uid=idx, R=R, T=T, FovY=FovY, FovX=FovX, image=image,
+                                        image_path=image_path, image_name=name, width=image.size[0],
+                                        height=image.size[1]))
 
     return cam_infos
 

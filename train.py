@@ -90,21 +90,21 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
     train_psnr = []
     test_psnr = []
     for iteration in range(first_iter, opt.iterations + 1):
-        # if network_gui.conn == None:
-        #     network_gui.try_connect()
-        # while network_gui.conn != None:
-        #     try:
-        #         net_image_bytes = None
-        #         custom_cam, do_training, pipe.convert_SHs_python, pipe.compute_cov3D_python, keep_alive, scaling_modifer = network_gui.receive()
-        #         if custom_cam != None:
-        #             net_image = render(custom_cam, gaussians, pipe, background, scaling_modifer)["render"]
-        #             net_image_bytes = memoryview((torch.clamp(net_image, min=0, max=1.0) * 255).byte().permute(1, 2,
-        #                                                                                                        0).contiguous().cpu().numpy())
-        #         network_gui.send(net_image_bytes, dataset.source_path)
-        #         if do_training and ((iteration < int(opt.iterations)) or not keep_alive):
-        #             break
-        #     except Exception as e:
-        #         network_gui.conn = None
+        if network_gui.conn == None:
+            network_gui.try_connect()
+        while network_gui.conn != None:
+            try:
+                net_image_bytes = None
+                custom_cam, do_training, pipe.convert_SHs_python, pipe.compute_cov3D_python, keep_alive, scaling_modifer = network_gui.receive()
+                if custom_cam != None:
+                    net_image = render(custom_cam, gaussians, pipe, background, scaling_modifer)["render"]
+                    net_image_bytes = memoryview((torch.clamp(net_image, min=0, max=1.0) * 255).byte().permute(1, 2,
+                                                                                                               0).contiguous().cpu().numpy())
+                network_gui.send(net_image_bytes, dataset.source_path)
+                if do_training and ((iteration < int(opt.iterations)) or not keep_alive):
+                    break
+            except Exception as e:
+                network_gui.conn = None
 
         iter_start.record()
 
@@ -119,8 +119,6 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             viewpoint_stack = scene.getTrainCameras().copy()
         viewpoint_cam = viewpoint_stack.pop(randint(0, len(viewpoint_stack) - 1))
 
-        # print("proj matrix", viewpoint_cam.full_proj_transform)
-
         # Render
         if (iteration - 1) == debug_from:
             pipe.debug = True
@@ -128,21 +126,13 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         bg = torch.rand((3), device="cuda") if opt.random_background else background
 
         render_pkg = render(viewpoint_cam, gaussians, pipe, bg)
-        # image, depth_map, viewspace_point_tensor, visibility_filter, radii = render_pkg["render"], render_pkg["depth"], render_pkg["viewspace_points"], render_pkg["visibility_filter"], render_pkg["radii"]
         image, viewspace_point_tensor, visibility_filter, radii = render_pkg["render"], render_pkg["viewspace_points"], \
         render_pkg["visibility_filter"], render_pkg["radii"]
-
-        # median_depth = render_pkg["median_depth"][0]
-        # median_depth_weight = render_pkg["median_depth"][1]
-        # opacity = render_pkg["opacity"]
 
         # Loss
         gt_image = viewpoint_cam.original_image.cuda()
         Ll1 = l1_loss(image, gt_image)
         loss = (1.0 - opt.lambda_dssim) * Ll1 + opt.lambda_dssim * (1.0 - ssim(image, gt_image))
-        # depth loss for test
-        # depth_distortion = (median_depth_weight * torch.abs(depth_map - opacity.detach() * median_depth)).mean()
-        # loss += 0.2 * depth_distortion
 
         loss.backward()
 
@@ -193,36 +183,6 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 print("\n[ITER {}] Saving Checkpoint".format(iteration))
                 torch.save((gaussians.capture(), iteration), scene.model_path + "/chkpnt" + str(iteration) + ".pth")
 
-            w = gaussians.get_w  # .unsqueeze(1)
-            xyz = gaussians.get_xyz
-            x, y, z = xyz[:, 0], xyz[:, 1], xyz[:, 2]
-            dist = torch.sqrt(x ** 2 + y ** 2 + z ** 2)  # / w
-            dist = dist / w
-
-            # print("check dist", dist.shape)
-            # print("check w", w)
-
-            if iteration % 1000 == 0:
-                print("iteration", iteration)
-                print("check w", w)
-                # sorted_w_descending, indices_w1 = torch.sort(w[~torch.isnan(w)], descending=True)[:500]
-                # sorted_w_ascending, indices_w2 = torch.sort(w[~torch.isnan(w)])[:500]
-                # print("sorted w descending", sorted_w_descending)
-                # print("sorted w ascending", sorted_w_ascending)
-                sorted_w_500_d, indices_d = torch.sort(dist[~torch.isnan(dist)], descending=True)[:500]
-                sorted_w_500, indices = torch.sort(dist[~torch.isnan(dist)])[:500]
-                print("mean farthest 500 w", torch.mean(sorted_w_500_d[:500]).detach().cpu().numpy())
-                print("farthest 50 w", sorted_w_500_d[:50].detach().cpu().numpy())
-                print("xyz value of farthest points", xyz[indices_d].detach().cpu().numpy())
-                print("w value of farthest points", w[indices_d].detach().cpu().numpy())
-                # print("mean farthest 500 inv w", 1 / torch.mean(sorted_w_500[:500]).detach().cpu().numpy())
-                # print("farthest 50 inv w", 1 / (sorted_w_500[:50]).detach().cpu().numpy())
-                #
-                # print("D mean farthest 500 w", torch.mean(sorted_w_500_d[:500]).detach().cpu().numpy())
-                # print("D farthest 50 w", sorted_w_500_d[:50].detach().cpu().numpy())
-                # print("D mean farthest 500 inv w", 1 / torch.mean(sorted_w_500_d[:500]).detach().cpu().numpy())
-                # print("D farthest 50 inv w", 1 / (sorted_w_500_d[:50]).detach().cpu().numpy())
-            sorted_ws.append(torch.mean(w).detach().cpu().numpy())
 
             record_psnr = False
             if record_psnr:
@@ -234,7 +194,6 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                     render_train = render(view, gaussians, pipe, bg)["render"]
                     gt_train = view.original_image.cuda()
                     train_psnr_itr.append(psnr(render_train, gt_train).mean().double())
-                # print(train_psnr_itr)
                 train_psnr.append(torch.tensor(train_psnr_itr).mean().item())
 
 
@@ -245,102 +204,9 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                     test_psnr_itr.append(psnr(render_test, gt_test).mean().double())
                 test_psnr.append(torch.tensor(test_psnr_itr).mean().item())
 
-                # print("psnr at iteartion: ", iteration)
-                # print(train_psnr, test_psnr)
-                # print(torch.tensor(train_psnr_itr).sum()/len(trainCameras), torch.tensor(test_psnr_itr).sum()/len(testCameras))
-
-    sorted_ws_output_path = dataset.model_path + "/wsLoss.jpg"
-    plt.figure()
-    plt.plot(sorted_ws)
-    plt.xlabel("iterations")
-    plt.ylabel("mean w")
-    plt.title("mean of 1000 smallest w")
-    figure = plt.gcf()  # get current figure
-    figure.set_size_inches(20, 10)
-
-    plt.savefig(sorted_ws_output_path, dpi=150)
-    print('Train render and save images...')
 
     np.save(dataset.model_path + "/train_psnr.npy", train_psnr)
     np.save(dataset.model_path + "/test_psnr.npy", test_psnr)
-
-    cameras_train = scene.getTrainCameras().copy()
-
-    directory_img = os.path.join(dataset.model_path, "result_images_train")
-    train_loss_json = os.path.join(directory_img, "train_loss.json")
-    train_loss_data = {}  # 创建一个空的字典来存储所有的结果
-    os.makedirs(directory_img, exist_ok=True)
-    to8b = lambda x: (255 * np.clip(x, 0, 1)).astype(np.uint8)
-
-    # for camera in cameras_train:
-    #     image_output_path = dataset.model_path + "/result_images_train/" + camera.image_name + "_render.jpg"
-    #     depth_output_path = dataset.model_path + "/depth_maps_train/" + camera.image_name + "_depth.jpg"
-    #     render_pkg = render(camera, gaussians, pipe, bg)
-    #     result = render_pkg["render"]
-    #     gt_image = camera.original_image.to(result.device)
-    #     ssim_camera = ssim(result, gt_image)
-    #     psnr_camera = psnr(result, gt_image).mean()
-    #     lpips_camera = lpips(result, gt_image, net_type='vgg').mean()
-    #
-    #     # 每次循环将当前图像的名字作为 key，loss 值作为 value 加入到字典中
-    #     train_loss_data[camera.image_name] = {
-    #         "ssim": ssim_camera.item(),
-    #         "psnr": psnr_camera.item(),
-    #         "lpips": lpips_camera.item()
-    #     }
-    #
-    #     result = result.detach().cpu().permute(1, 2, 0).numpy()
-    #     imageio.imwrite(image_output_path, to8b(result))
-
-    # 最后一次性将字典写入 JSON 文件
-    with open(train_loss_json, 'w') as f:
-        json.dump(train_loss_data, f, indent=4)
-
-    print('Train render and save images...')
-    cameras_test = scene.getTestCameras().copy()
-
-    directory_img = os.path.join(dataset.model_path, "result_images_test")
-    test_loss_json = os.path.join(directory_img, "test_loss.json")
-    test_loss_data = {}  # 创建一个空的字典来存储所有的结果
-    os.makedirs(directory_img, exist_ok=True)
-
-    # scene_render = Scene(dataset, gaussians, shuffle=False)
-    #
-    # camera_test_render = scene_render.getTestCameras()
-
-    # for idx, camera in enumerate(camera_test_render):
-    #     # image_output_path = dataset.model_path + "/result_images_test/" + camera.image_name + "_render.jpg"
-    #     # render_pkg = render(camera, gaussians, pipe, bg)
-    #     # result = render_pkg["render"]
-    #     #
-    #     # gt_image = camera.original_image.to(result.device)
-    #     # ssim_camera = ssim(result, gt_image)
-    #     # psnr_camera = psnr(result, gt_image).mean()
-    #     # lpips_camera = lpips(result, gt_image, net_type='vgg').mean()
-    #     # # 每次循环将当前图像的名字作为 key，loss 值作为 value 加入到字典中
-    #     # test_loss_data[camera.image_name] = {
-    #     #     "ssim": ssim_camera.item(),
-    #     #     "psnr": psnr_camera.item(),
-    #     #     "lpips": lpips_camera.item()
-    #     # }
-    #     #
-    #     # result = result.detach().cpu().permute(1, 2, 0).numpy()
-    #     # imageio.imwrite(image_output_path, to8b(result))
-    #     name = "test"
-    #     render_path = os.path.join(dataset.model_path, name, "ours_{}".format(opt.iterations), "renders")
-    #     gts_path = os.path.join(dataset.model_path, name, "ours_{}".format(opt.iterations), "gt")
-    #
-    #     makedirs(render_path, exist_ok=True)
-    #     makedirs(gts_path, exist_ok=True)
-    #
-    #     rendering = render(camera, gaussians, pipe, background)["render"]
-    #     gt = camera.original_image[0:3, :, :]
-    #     torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(idx) + ".png"))
-    #     torchvision.utils.save_image(gt, os.path.join(gts_path, '{0:05d}'.format(idx) + ".png"))
-
-    # 最后一次性将字典写入 JSON 文件
-    with open(test_loss_json, 'w') as f:
-        json.dump(test_loss_data, f, indent=4)
 
     loss_output_path = dataset.model_path + "/lossPlot.jpg"
     plt.figure()
@@ -449,7 +315,7 @@ if __name__ == "__main__":
     safe_state(args.quiet)
 
     # Start GUI server, configure and run training
-    # network_gui.init(args.ip, args.port)
+    network_gui.init(args.ip, args.port)
     torch.autograd.set_detect_anomaly(args.detect_anomaly)
     training(lp.extract(args), op.extract(args), pp.extract(args), args.test_iterations, args.save_iterations,
              args.checkpoint_iterations, args.start_checkpoint, args.debug_from)

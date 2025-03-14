@@ -31,13 +31,6 @@ def render_set(model_path, name, iteration, views, gaussians, pipeline, backgrou
             end = time.time()
 
             render_time_list.append((end-start)*1000)
-            # gt = view.original_image[0:3, :, :]
-            # torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(idx) + ".png"))
-            # torchvision.utils.save_image(gt, os.path.join(gts_path, '{0:05d}'.format(idx) + ".png"))
-
-    print(render_time_list)
-    print("????", render_time_list[5:])
-    print("?????", len(views) * 100 / (np.sum(render_time_list) / 1000))
 
 
     with open(os.path.join(model_path, name, 'render_time.txt'), 'w') as f:
@@ -56,11 +49,7 @@ def render_sets(dataset : ModelParams, iteration : int, pipeline : PipelineParam
         if not skip_train:
              render_set(dataset.model_path, "train", scene.loaded_iter, scene.getTrainCameras(), gaussians, pipeline, background)
 
-        # import pdb; pdb.set_trace()
         cameras = scene.getTestCameras()
-        # for cam in cameras:
-        #     cam.image_height = 1080
-        #     cam.image_width = 1920
 
         if not skip_test:
              render_set(dataset.model_path, "test", scene.loaded_iter, cameras, gaussians, pipeline, background)

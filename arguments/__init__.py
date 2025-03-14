@@ -70,19 +70,13 @@ class PipelineParams(ParamGroup):
 
 class OptimizationParams(ParamGroup):
     def __init__(self, parser):
-        self.iterations = 30_000
+        self.iterations = 50_000
         self.position_lr_init = 0.00016
         self.position_lr_final = 0.0000016
         self.position_lr_delay_mult = 0.01
         self.position_lr_max_steps = self.iterations
-        self.polar_coord_lr = 0.00016
-
-        # self.w_lr = 0.00016
-        # self.w_lr_final = 0.0000016
-
         self.w_lr = 0.0002
         self.w_lr_final = 0.000001
-
         self.w_lr_delay_mult = 0.01
         self.w_lr_max_steps = self.iterations
         self.feature_lr = 0.0025
@@ -92,39 +86,12 @@ class OptimizationParams(ParamGroup):
         self.percent_dense = 0.01
         self.lambda_dssim = 0.2
 
-
-        # 5w
         self.densification_interval = 200
         self.opacity_reset_interval = 6000
         self.densify_from_iter = 1500
-        self.densify_until_iter = 30_000 # 15_000
+        self.densify_until_iter = 30_000
         self.densify_grad_threshold = 0.0002
         self.random_background = False
-
-
-        # 3w
-        # self.densification_interval = 100
-        # self.opacity_reset_interval = 3000
-        # self.densify_from_iter = 500
-        # self.densify_until_iter = 15_000
-        # self.densify_grad_threshold = 0.0002
-        # self.random_background = False
-
-        # 5w new
-        # self.densification_interval = 100
-        # self.opacity_reset_interval = 3000
-        # self.densify_from_iter = 1500
-        # self.densify_until_iter = 30_000
-        # self.densify_grad_threshold = 0.0002
-        # self.random_background = False
-
-        # 5w new1
-        # self.densification_interval = 100
-        # self.opacity_reset_interval = 6000
-        # self.densify_from_iter = 1500
-        # self.densify_until_iter = 30_000
-        # self.densify_grad_threshold = 0.0002
-        # self.random_background = False
 
         super().__init__(parser, "Optimization Parameters")
 
