@@ -61,57 +61,6 @@ class GaussianModel:
         self.spatial_lr_scale = 0
         self.setup_functions()
 
-    def capture(self):
-        return (
-            self.active_sh_degree,
-            self._xyz,
-            self._w,
-            self._features_dc,
-            self._features_rest,
-            self._scaling,
-            self._rotation,
-            self._opacity,
-            self.max_radii2D,
-            self.xyz_gradient_accum,
-            self.denom,
-            self.optimizer.state_dict(),
-            self.spatial_lr_scale,
-        )
-
-    # Current version used for unit test, TODO: write restore corresponding our implementation
-    def restore(self, model_args, training_args):
-        (self.active_sh_degree,
-         self._xyz,
-         self._features_dc,
-         self._features_rest,
-         scaling,
-         self._rotation,
-         self._opacity,
-         self.max_radii2D,
-         xyz_gradient_accum,
-         denom,
-         opt_dict,
-         self.spatial_lr_scale) = model_args
-
-        xyz = self._xyz
-        x, y, z = xyz[:, 0], xyz[:, 1], xyz[:, 2]
-        r = torch.sqrt(x ** 2 + y ** 2 + z ** 2)
-        w = 1 / r
-
-        theta_coord = torch.atan2(torch.sqrt(x ** 2 + y ** 2), z)
-        phi_coord = torch.atan2(y, x)
-        polar_coord = torch.stack([theta_coord, phi_coord], dim=1)
-
-        self._polar_coord = polar_coord
-
-        self._scaling = torch.log(torch.exp(scaling) / r.unsqueeze(1))
-        self._w = w
-
-        self.training_setup(training_args)
-        self.xyz_gradient_accum = xyz_gradient_accum
-        self.denom = denom
-        self.optimizer.load_state_dict(opt_dict)
-
     @property
     def get_scaling(self):
         return self.scaling_activation(self._scaling)
