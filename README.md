@@ -1,7 +1,7 @@
 # HoGS: Unified Near and Far Object Reconstruction via Homogeneous Gaussian Splatting
 Xinpeng Liu*, Zeyi Huang*, Fumio Okura, Yasuyuki Matsushita  (* indicates equal contribution)<br>
 
-![Teaser image](assets/teaser_new.pdf)
+![Teaser image](assets/teaser_new-1.png)
 
 Homogeneous Gaussian Splatting (HoGS) uses homogeneous coordinates in the 3D Gaussian Splatting (3DGS) framework to represent both positions and scales. Homogeneous coordinates defined in the projective geometry represent nearby and distant objects seamlessly, thus our HoGS enables the accurate rendering of unbounded scenes while preserving the 3DGS's fast training time and real-time performance. Compared to the traditional 3DGS, HoGS demonstrates improved robustness in capturing distant details while maintaining high fidelity in near-field objects.
 
@@ -10,15 +10,11 @@ Abstract: *Novel view synthesis has demonstrated impressive progress recently, w
 <section class="section" id="BibTeX">
   <div class="container is-max-desktop content">
     <h2 class="title">BibTeX</h2>
-    <pre><code>@Article{kerbl3Dgaussians,
-      author       = {Kerbl, Bernhard and Kopanas, Georgios and Leimk{\"u}hler, Thomas and Drettakis, George},
-      title        = {3D Gaussian Splatting for Real-Time Radiance Field Rendering},
-      journal      = {ACM Transactions on Graphics},
-      number       = {4},
-      volume       = {42},
-      month        = {July},
-      year         = {2023},
-      url          = {https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/}
+    <pre><code>@inproceedings{liuHoGS,
+      author       = {Xinpeng Liu, Zeyi Huang, Fumio Okura, Yasuyuki Matsushita},
+      title        = {HoGS: Unified Near and Far Object Reconstruction via Homogeneous Gaussian Splatting},
+      booktitle    = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+      year         = {2025}
 }</code></pre>
   </div>
 </section>
