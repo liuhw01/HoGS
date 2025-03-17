@@ -187,13 +187,13 @@ By default, the trained models use all available images in the dataset. To train
 ```shell
 python train.py -s <path to COLMAP or NeRF Synthetic dataset> --eval # Train with train/test split
 python render.py -m <path to trained model> # Generate renderings
-python metrics.py -m <path to trained model> # Compute error metrics on renderings
+python metrics_w_depth.py -m <path to trained model> -d <path to depth map> # Compute overall error metrics on renderings and near and far metrics based on depth map
 ```
 
 If you want to evaluate our [pre-trained models](https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/datasets/pretrained/models.zip), you will have to download the corresponding source data sets and indicate their location to ```render.py``` with an additional ```--source_path/-s``` flag. Note: The pre-trained models were created with the release codebase. This code base has been cleaned up and includes bugfixes, hence the metrics you get from evaluating them will differ from those in the paper.
 ```shell
 python render.py -m <path to pre-trained model> -s <path to COLMAP dataset>
-python metrics.py -m <path to pre-trained model>
+python metrics_w_depth.py -m <path to trained model> -d <path to depth map>
 ```
 
 <details>
