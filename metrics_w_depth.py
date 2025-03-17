@@ -79,7 +79,7 @@ def evaluate(model_paths, depth_paths):
 
     far_threshold = 0.05
     threshold = 255 * far_threshold
-    for scene_dir in model_paths:
+    for idx, scene_dir in enumerate(model_paths):
         if True:
         # try:
             print("Scene:", scene_dir)
@@ -89,7 +89,7 @@ def evaluate(model_paths, depth_paths):
             per_view_dict_polytopeonly[scene_dir] = {}
 
             test_dir = Path(scene_dir) / "test"
-            depth_path = depth_paths[0]
+            depth_path = depth_paths[idx]
 
             for method in os.listdir(test_dir):
                 print("Method:", method)
