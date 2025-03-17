@@ -233,6 +233,15 @@ python metrics_w_depth.py -m <path to trained model> -d <path to depth map>
   #### --model_paths / -m 
   Space-separated list of model paths for which metrics should be computed.
 </details>
+
+<details>
+<summary><span style="font-weight: bold;">Command Line Arguments for metrics_w_depth.py</span></summary>
+
+  #### --model_paths / -m 
+  Space-separated list of model paths for which metrics should be computed.
+  #### --depth_paths / -m 
+  Space-separated list of depth paths corresponding to the model paths.
+</details>
 <br>
 
 We further provide the ```full_eval.py``` script. This script specifies the routine used in our evaluation and demonstrates the use of some additional parameters, e.g., ```--images (-i)``` to define alternative image directories within COLMAP data sets. If you have downloaded and extracted all the training data, you can run it like this:
