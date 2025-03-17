@@ -30,7 +30,6 @@ def readImages0(renders_dir, gt_dir):
     image_names = []
     for fname in os.listdir(renders_dir):
         render = Image.open(renders_dir / fname)
-        # print(render)
         gt = Image.open(gt_dir / fname)
         renders.append(tf.to_tensor(render).unsqueeze(0)[:, :3, :, :].cuda())
         gts.append(tf.to_tensor(gt).unsqueeze(0)[:, :3, :, :].cuda())
@@ -45,7 +44,6 @@ def readImages(renders_dir, gt_dir, dp_dir):
 
     # Sort GT images by their filenames
     gt_files = sorted(gt_dir.glob("*.png"))
-    print(gt_files)
 
     # Sort depth files in ascending order
     depth_files = sorted(dp_dir.glob("*.png"))
@@ -53,16 +51,11 @@ def readImages(renders_dir, gt_dir, dp_dir):
     for index, fname in enumerate(sorted(renders_dir.glob("*.png"))):
         render = Image.open(fname)
 
-        print(depth_files[index*8])
-        print(gt_files[index])
         # Get corresponding GT image based on sorted index
         gt = Image.open(gt_files[index])
 
         # Format output name for GT as "00000.png"
         formatted_gt_name = f"{index:05d}.png"
-
-        # depth_maps = Image.open(depth_files[index * 8])
-
 
         # Convert images to tensors and add to lists
         renders.append(tf.to_tensor(render).unsqueeze(0)[:, :3, :, :].cuda())
@@ -72,24 +65,20 @@ def readImages(renders_dir, gt_dir, dp_dir):
         # Append formatted GT name
         image_names.append(formatted_gt_name)
 
-        # print(f"Render: {render_file}, GT: {gt_file}, Depth: {depth_file}")
-        # print(f"Image name: {formatted_gt_name}")
 
     return renders, gts, depth_maps, image_names
 
-def evaluate(model_paths):
+def evaluate(model_paths, depth_paths):
 
     full_dict = {}
     per_view_dict = {}
     full_dict_polytopeonly = {}
     per_view_dict_polytopeonly = {}
-    print("")
 
-    # depth_path = "../mnt/data/data_for_paper/360_v2/treehill/depth_depthAnything"
-    # depth_path = "../mnt/data/data_for_paper/tandt_db/db/drjohnson/depth_depthAnything"
-    # depth_path = "../mnt/data/data_for_paper/tandt_db/tandt/train/depth_depthAnything"
-    depth_path = "../mnt/data/data_for_paper/DL3DV_benchmark_outdoor/34/gaussian_splat/depth_depthAnything"
+    # print(depth_paths)
 
+    far_threshold = 0.05
+    threshold = 255 * far_threshold
     for scene_dir in model_paths:
         if True:
         # try:
@@ -100,6 +89,7 @@ def evaluate(model_paths):
             per_view_dict_polytopeonly[scene_dir] = {}
 
             test_dir = Path(scene_dir) / "test"
+            depth_path = depth_paths[0]
 
             for method in os.listdir(test_dir):
                 print("Method:", method)
@@ -112,71 +102,27 @@ def evaluate(model_paths):
                 method_dir = test_dir / method
                 gt_dir = method_dir/ "gt"
                 renders_dir = method_dir / "renders"
-                # gt_dir = method_dir/ "gt"
-                # gt_dir = method_dir / "gt-color"
-                # renders_dir = method_dir / "test_preds"
-                # renders_dir = method_dir / "color"
                 renders, gts, depth_maps, image_names = readImages(renders_dir, gt_dir, Path(depth_path))
                 dp_dir = method_dir / "depth_map_used"
-                print(dp_dir)
                 os.makedirs(dp_dir, exist_ok=True)
 
-                # print(image_names)
-                # print(renders)
-                # print(type(renders))
-                # print(type(renders[0]))
-                # print(int(os.path.splitext(image_names)))
-                # renders_near, renders_far = torch.clone(renders), torch.clone(renders)
-                # gts_near, gts_far = torch.clone(gts), torch.clone(gts)
                 renders_near = []
                 renders_far = []
                 gts_near = []
                 gts_far = []
 
-                starting_depth_number = 5572
                 for i in range(len(image_names)):
                     image_name = image_names[i]
                     num = int(os.path.splitext(image_name)[0])
                     depth_number = num# * 8
-                    # if depth_number < 10:
-                    #     depth_name = f"0000{depth_number}.tif"
-                    # elif depth_number < 100:
-                    #     depth_name = f"000{depth_number}.tif"
-                    # elif depth_number < 1000:
-                    #     depth_name = f"00{depth_number}.tif"
-                    # if depth_number < 10:
-                    #     depth_name = f"0000{depth_number}.png"
-                    # elif depth_number < 100:
-                    #     depth_name = f"000{depth_number}.png"
-                    # elif depth_number < 1000:
-                    #     depth_name = f"00{depth_number}.png"
                     depth_name = f"DSC{depth_number:05d}.png"
-                    # print(depth_path)
                     depth_map_filename = str(dp_dir) + "/" + depth_name
-                    # depth_name = depth_path + "/" + depth_name
-                    # print(depth_maps)
                     depth_name = str(depth_maps[depth_number])
-                    print(renders[i].shape)
-                    print(depth_name)
-                    # print(os.path.exists(depth_name))
-                    # print(os.path.exists(depth_path))
                     depth_map = cv2.resize(cv2.imread(depth_name, cv2.IMREAD_ANYDEPTH), (renders[i].shape[3], renders[i].shape[2]))
-                    # return
+                    depth_map[depth_map < threshold] = 0
                     depth_data = torch.tensor(depth_map, device="cuda")
-                    # depth_data = torch.tensor(cv2.imread(depth_name, cv2.IMREAD_ANYDEPTH), device="cuda")
                     cv2.imwrite(depth_map_filename, depth_map)
 
-
-
-                    print("distribution of foreground and background", depth_name)
-                    pixel_count = depth_data.shape[0] * depth_data.shape[1]
-                    print(depth_data.shape[0] * depth_data.shape[1])
-                    print(torch.count_nonzero(depth_data == 0))
-                    print(torch.count_nonzero(depth_data == 0) / pixel_count)
-                    print(torch.count_nonzero(depth_data))
-                    print(torch.count_nonzero(depth_data) / pixel_count)
-                    print("----------------------------------------")
-                    # return
                     mask_far = depth_data == 0
                     mask_far_bc = mask_far.unsqueeze(0).unsqueeze(0)
                     mask_near = depth_data > 0
@@ -272,5 +218,7 @@ if __name__ == "__main__":
     # Set up command line argument parser
     parser = ArgumentParser(description="Training script parameters")
     parser.add_argument('--model_paths', '-m', required=True, nargs="+", type=str, default=[])
+    parser.add_argument('--depth_paths', '-d', required=True, nargs="+", type=str, default=[])
     args = parser.parse_args()
-    evaluate(args.model_paths)
+    print(args)
+    evaluate(args.model_paths, args.depth_paths)
