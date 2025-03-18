@@ -28,12 +28,12 @@ This work was partially supported by JSPS KAKENHI Grant JP23H05491 and JST FORES
 The repository contains submodules, thus please check it out with 
 ```shell
 # SSH
-git clone git@github.com:graphdeco-inria/gaussian-splatting.git --recursive
+git clone git@github.com:huntorochi/HoGS.git --recursive
 ```
 or
 ```shell
 # HTTPS
-git clone https://github.com/graphdeco-inria/gaussian-splatting --recursive
+git clone https://github.com/huntorochi/HoGS.git
 ```
 
 ## Overview
