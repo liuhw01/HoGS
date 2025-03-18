@@ -1,4 +1,4 @@
-# HoGS: Unified Near and Far Object Reconstruction via Homogeneous Gaussian Splatting
+# HoGS: Unified Near and Far Object Reconstruction via Homogeneous Gaussian Splatting (CVPR2025)
 Xinpeng Liu*, Zeyi Huang*, Fumio Okura, Yasuyuki Matsushita  (* indicates equal contribution)<br>
 
 ![Teaser image](assets/teaser_new-1.png)
