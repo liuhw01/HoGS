@@ -21,7 +21,7 @@ Abstract: *Novel view synthesis has demonstrated impressive progress recently, w
 
 ## Funding and Acknowledgments
 
-This research was funded by the ERC Advanced grant FUNGRAPH No 788065. The authors are grateful to Adobe for generous donations, the OPAL infrastructure from Université Côte d’Azur and for the HPC resources from GENCI–IDRIS (Grant 2022-AD011013409). The authors thank the anonymous reviewers for their valuable feedback, P. Hedman and A. Tewari for proofreading earlier drafts also T. Müller, A. Yu and S. Fridovich-Keil for helping with the comparisons.
+This work was partially supported by JSPS KAKENHI Grant JP23H05491 and JST FOREST Grant JPMJFR206F.
 
 ## Cloning the Repository
 
