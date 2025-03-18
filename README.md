@@ -138,10 +138,6 @@ python train.py -s <path to COLMAP or NeRF Synthetic dataset>
   Space-separated iterations at which the training script computes L1 and PSNR over test set, ```7000 30000``` by default.
   #### --save_iterations
   Space-separated iterations at which the training script saves the Gaussian model, ```7000 30000 <iterations>``` by default.
-  #### --checkpoint_iterations
-  Space-separated iterations at which to store a checkpoint for continuing later, saved in the model directory.
-  #### --start_checkpoint
-  Path to a saved checkpoint to continue training from.
   #### --quiet 
   Flag to omit any text written to standard out pipe. 
   #### --feature_lr
@@ -244,40 +240,6 @@ python metrics_w_depth.py -m <path to trained model> -d <path to depth map>
 </details>
 <br>
 
-We further provide the ```full_eval.py``` script. This script specifies the routine used in our evaluation and demonstrates the use of some additional parameters, e.g., ```--images (-i)``` to define alternative image directories within COLMAP data sets. If you have downloaded and extracted all the training data, you can run it like this:
-```shell
-python full_eval.py -m360 <mipnerf360 folder> -tat <tanks and temples folder> -db <deep blending folder>
-```
-In the current version, this process takes about 7h on our reference machine containing an A6000. If you want to do the full evaluation on our pre-trained models, you can specify their download location and skip training. 
-```shell
-python full_eval.py -o <directory with pretrained models> --skip_training -m360 <mipnerf360 folder> -tat <tanks and temples folder> -db <deep blending folder>
-```
-
-If you want to compute the metrics on our paper's [evaluation images](https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/evaluation/images.zip), you can also skip rendering. In this case it is not necessary to provide the source datasets. You can compute metrics for multiple image sets at a time. 
-```shell
-python full_eval.py -m <directory with evaluation images>/garden ... --skip_training --skip_rendering
-```
-
-<details>
-<summary><span style="font-weight: bold;">Command Line Arguments for full_eval.py</span></summary>
-  
-  #### --skip_training
-  Flag to skip training stage.
-  #### --skip_rendering
-  Flag to skip rendering stage.
-  #### --skip_metrics
-  Flag to skip metrics calculation stage.
-  #### --output_path
-  Directory to put renderings and results in, ```./eval``` by default, set to pre-trained model location if evaluating them.
-  #### --mipnerf360 / -m360
-  Path to MipNeRF360 source datasets, required if training or rendering.
-  #### --tanksandtemples / -tat
-  Path to Tanks&Temples source datasets, required if training or rendering.
-  #### --deepblending / -db
-  Path to Deep Blending source datasets, required if training or rendering.
-</details>
-<br>
-
 ## Interactive Viewers
 We provide two interactive viewers for our method: remote and real-time. Our viewing solutions are based on the [SIBR](https://sibr.gitlabpages.inria.fr/) framework, developed by the GRAPHDECO group for several novel-view synthesis projects.
 
@@ -338,19 +300,23 @@ Our COLMAP loaders expect the following dataset structure in the source path loc
 |   |---<image 1>
 |   |---...
 |---sparse
-    |---0
-        |---cameras.bin
-        |---images.bin
-        |---points3D.bin
+|   |---0
+|       |---cameras.bin
+|       |---images.bin
+|       |---points3D.bin
+|---depth
+|   |---<image 0>
+|   |---<image 1>
+|   |---...
 ```
 
 For rasterization, the camera models must be either a SIMPLE_PINHOLE or PINHOLE camera. We provide a converter script ```convert.py```, to extract undistorted images and SfM information from input images. Optionally, you can use ImageMagick to resize the undistorted images. This rescaling is similar to MipNeRF360, i.e., it creates images with 1/2, 1/4 and 1/8 the original resolution in corresponding folders. To use them, please first install a recent version of COLMAP (ideally CUDA-powered) and ImageMagick. Put the images you want to use in a directory ```<location>/input```.
 ```
 <location>
 |---input
-    |---<image 0>
-    |---<image 1>
-    |---...
+|   |---<image 0>
+|   |---<image 1>
+|   |---...
 ```
  If you have COLMAP and ImageMagick on your system path, you can simply run 
 ```shell
@@ -366,10 +332,10 @@ If you have your own COLMAP dataset without undistortion (e.g., using ```OPENCV`
 |   |---<image 1>
 |   |---...
 |---distorted
-    |---database.db
-    |---sparse
-        |---0
-            |---...
+|   |---database.db
+|   |---sparse
+|       |---0
+           |---...
 ```
 Then run 
 ```shell
