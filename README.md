@@ -1,7 +1,7 @@
 # HoGS: Unified Near and Far Object Reconstruction via Homogeneous Gaussian Splatting (CVPR2025)
 ## Xinpeng Liu<sup>1*</sup>, Zeyi Huang<sup>1*</sup>, Fumio Okura<sup>1</sup>, Yasuyuki Matsushita<sup>1,2</sup>  <br> <sup>1</sup> The University of Osaka, <sup>2</sup> Microsoft Research Asia Tokyo <br>(* indicates equal contribution)
-[![arXiv](https://img.shields.io/badge/arXiv-xxxx.xxxxx-b31b1b.svg)](https://arxiv.org/abs/xxxx.xxxxx) 
-| [Webpage](https://homogeneous-gaussian-splatting.github.io/hogs.github.io/)|<br>
+[![arXiv](https://img.shields.io/badge/arXiv-xxxx.xxxxx-b31b1b.svg)](https://arxiv.org/abs/xxxx.xxxxx)<br>
+| [Webpage](https://kh129.github.io/hogs/)|<br>
 
 ![Teaser image](assets/teaser_new-1.png)
 
