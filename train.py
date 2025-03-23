@@ -60,7 +60,6 @@ def custom_update_param2(param, base_lr, scale, eps=1e-8):
 
 
 def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoint_iterations, checkpoint, debug_from):
-    print("check directory============")
     random_seed = 3407
     torch.manual_seed(random_seed)
     torch.cuda.manual_seed(random_seed)
