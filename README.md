@@ -364,10 +364,9 @@ python convert.py -s <location> --skip_matching [--resize] #If not resizing, Ima
 </details>
 <br>
 
-### Depth regularization
+### Evaluation of Near and Far Metrics with Depth Maps
 
-To have better reconstructed scenes we use depth maps as priors during optimization with each input images. It works best on untextured parts ex: roads and can remove floaters. Several papers have used similar ideas to improve various aspects of 3DGS; (e.g. [DepthRegularizedGS](https://robot0321.github.io/DepthRegGS/index.html), [SparseGS](https://formycat.github.io/SparseGS-Real-Time-360-Sparse-View-Synthesis-using-Gaussian-Splatting/), [DNGaussian](https://fictionarry.github.io/DNGaussian/)). The depth regularization we integrated is that used in our [Hierarchical 3DGS](https://repo-sam.inria.fr/fungraph/hierarchical-3d-gaussians/) paper, but applied to the original 3DGS; for some scenes (e.g., the DeepBlending scenes) it improves quality significantly; for others it either makes a small difference or can even be worse. For example results showing the potential benefit and statistics on quality please see here: [Stats for depth regularization](results.md).
-
+We evaluate the synthesis accuracy for near and far objects independently with monocular depth maps.
 When training on a synthetic dataset, depth maps can be produced and they do not require further processing to be used in our method.
 
 For real world datasets depth maps should be generated for each input images, to generate them please do the following:
@@ -380,11 +379,7 @@ For real world datasets depth maps should be generated for each input images, to
    ```
    python Depth-Anything-V2/run.py --encoder vitl --pred-only --grayscale --img-path <path to input images> --outdir <output path>
    ```
-5. Generate a `depth_params.json` file using:
-    ```
-    python utils/make_depth_scale.py --base_dir <path to colmap> --depths_dir <path to generated depths>
-    ```
 
-A new parameter should be set when training if you want to use depth regularization `-d <path to depth maps>`.
+
 
 
