@@ -11,7 +11,7 @@
 
 import os
 import torch
-import imageio
+# import imageio
 import random
 import torchvision
 from random import randint
@@ -24,7 +24,7 @@ from utils.general_utils import safe_state
 import uuid
 import pylab as plt
 import numpy as np
-import cv2
+# import cv2
 from tqdm import tqdm
 from utils.image_utils import psnr
 from argparse import ArgumentParser, Namespace
