@@ -87,6 +87,31 @@ conda env create --file environment.yml --prefix <Drive>/<env_path>/gaussian_spl
 conda activate <Drive>/<env_path>/gaussian_splatting
 ```
 
+#### Docker Setup
+We also support a Docker-based setup for convenience and reproducibility.
+Below is an example setup process based on Ubuntu 20.04 with CUDA 11.3.1 and cuDNN 8:
+
+```shell
+# Pull the base CUDA image
+docker pull nvidia/cuda:11.3.1-cudnn8-devel-ubuntu20.04
+
+# Start the container
+docker run --gpus all -it nvidia/cuda:11.3.1-cudnn8-devel-ubuntu20.04 /bin/bash
+
+# Inside the container:
+apt-get update && apt-get upgrade -y
+apt install -y git curl
+
+# Install Anaconda
+curl -O https://repo.anaconda.com/archive/Anaconda3-2024.10-1-Linux-x86_64.sh
+bash Anaconda3-2024.10-1-Linux-x86_64.sh
+
+# Set up the Conda environment
+source ~/.bashrc
+conda env create --file environment.yml
+conda activate gaussian_splatting
+```
+
 #### Modifications
 
 If you can afford the disk space, we recommend using our environment files for setting up a training environment identical to ours. If you want to make modifications, please note that major version changes might affect the results of our method. However, our (limited) experiments suggest that the codebase works just fine inside a more up-to-date environment (Python 3.8, PyTorch 2.0.0, CUDA 12). Make sure to create an environment where PyTorch and its CUDA runtime version match and the installed CUDA SDK has no major version difference with PyTorch's CUDA version.
@@ -114,6 +139,8 @@ python train.py -s <path to COLMAP or NeRF Synthetic dataset>
   Alternative subdirectory for COLMAP images (```images``` by default).
   #### --eval
   Add this flag to use a MipNeRF360-style training/test split for evaluation.
+  #### --use_skybox
+  Enable this flag to add a surrounding skybox.
   #### --resolution / -r
   Specifies resolution of the loaded images before training. If provided ```1, 2, 4``` or ```8```, uses original, 1/2, 1/4 or 1/8 resolution, respectively. For all other values, rescales the width to the given number while maintaining image aspect. **If not set and input image width exceeds 1.6K pixels, inputs are automatically rescaled to this target.**
   #### --data_device
