@@ -102,6 +102,8 @@ docker attach HoGS_env
 # Inside the container:
 apt-get update && apt-get upgrade -y
 apt install -y git curl
+apt install -y libgl1
+apt install -y libglib2.0-0
 
 # Install Anaconda
 curl -O https://repo.anaconda.com/archive/Anaconda3-2024.10-1-Linux-x86_64.sh
