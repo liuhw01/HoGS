@@ -129,7 +129,7 @@ class GaussianModel:
             self.active_sh_degree += 1
 
     # def create_from_pcd(self, pcd : BasicPointCloud, spatial_lr_scale : float, camera_pos_init):
-    def create_from_pcd(self, pcd: BasicPointCloud, spatial_lr_scale: float):
+    def create_from_pcd(self, pcd: BasicPointCloud, spatial_lr_scale: float, use_skybox: bool):
         self.spatial_lr_scale = spatial_lr_scale
         fused_point_cloud = torch.tensor(np.asarray(pcd.points)).float().cuda()
         fused_color = RGB2SH(torch.tensor(np.asarray(pcd.colors)).float().cuda())
@@ -137,27 +137,92 @@ class GaussianModel:
         features[:, :3, 0] = fused_color
         features[:, 3:, 1:] = 0.0
 
+
         print("Number of points at initialisation : ", fused_point_cloud.shape[0])
+        if not use_skybox:
+            polar_coord, w, r = self.xyz_to_polar(fused_point_cloud)
+            fused_point_cloud = fused_point_cloud * w.unsqueeze(1)
+            w = self.w_inverse_activation(w)
 
-        polar_coord, w, r = self.xyz_to_polar(fused_point_cloud)
-        fused_point_cloud = fused_point_cloud * w.unsqueeze(1)
-        w = self.w_inverse_activation(w)
+            dist2 = torch.clamp_min(distCUDA2(torch.from_numpy(np.asarray(pcd.points)).float().cuda()), 0.0000001)
+            scales = torch.log(torch.sqrt(dist2) / r)[..., None].repeat(1, 3)
+            rots = torch.zeros((fused_point_cloud.shape[0], 4), device="cuda")
+            rots[:, 0] = 1
 
-        dist2 = torch.clamp_min(distCUDA2(torch.from_numpy(np.asarray(pcd.points)).float().cuda()), 0.0000001)
-        scales = torch.log(torch.sqrt(dist2) / r)[..., None].repeat(1, 3)
-        rots = torch.zeros((fused_point_cloud.shape[0], 4), device="cuda")
-        rots[:, 0] = 1
+            opacities = inverse_sigmoid(0.1 * torch.ones((fused_point_cloud.shape[0], 1), dtype=torch.float, device="cuda"))
 
-        opacities = inverse_sigmoid(0.1 * torch.ones((fused_point_cloud.shape[0], 1), dtype=torch.float, device="cuda"))
+            self._xyz = nn.Parameter(fused_point_cloud.requires_grad_(True))
+            self._w = nn.Parameter(w.requires_grad_(True))  # (P, 1) dist to world origin
+            self._features_dc = nn.Parameter(features[:, :, 0:1].transpose(1, 2).contiguous().requires_grad_(True))
+            self._features_rest = nn.Parameter(features[:, :, 1:].transpose(1, 2).contiguous().requires_grad_(True))
+            self._scaling = nn.Parameter(scales.requires_grad_(True))
+            self._rotation = nn.Parameter(rots.requires_grad_(True))
+            self._opacity = nn.Parameter(opacities.requires_grad_(True))
+            self.max_radii2D = torch.zeros((self.get_xyz.shape[0]), device="cuda")
 
-        self._xyz = nn.Parameter(fused_point_cloud.requires_grad_(True))
-        self._w = nn.Parameter(w.requires_grad_(True))  # (P, 1) dist to world origin
-        self._features_dc = nn.Parameter(features[:, :, 0:1].transpose(1, 2).contiguous().requires_grad_(True))
-        self._features_rest = nn.Parameter(features[:, :, 1:].transpose(1, 2).contiguous().requires_grad_(True))
-        self._scaling = nn.Parameter(scales.requires_grad_(True))
-        self._rotation = nn.Parameter(rots.requires_grad_(True))
-        self._opacity = nn.Parameter(opacities.requires_grad_(True))
-        self.max_radii2D = torch.zeros((self.get_xyz.shape[0]), device="cuda")
+        else:
+            #
+            # Copyright (C) 2023 - 2024, Inria
+            # GRAPHDECO research group, https://team.inria.fr/graphdeco
+            # All rights reserved.
+            #
+            # This software is free for non-commercial, research and evaluation use
+            # under the terms of the LICENSE.md file.
+            #
+            # For inquiries contact  george.drettakis@inria.fr
+            #
+            # Skybox parameters
+            num_skybox_points = 100000
+            sky_radius = 1000  # Set the skybox radius
+            sky_color = torch.tensor([1.0, 1.0, 1.0], device="cuda")
+
+            # Generate skybox points
+            theta = 2.0 * torch.pi * torch.rand(num_skybox_points, device="cuda")
+            phi = torch.arccos(1.0 - 1.4 * torch.rand(num_skybox_points, device="cuda"))
+            skybox_xyz = torch.zeros((num_skybox_points, 3), device="cuda")
+            skybox_xyz[:, 0] = sky_radius * torch.cos(theta) * torch.sin(phi)
+            skybox_xyz[:, 1] = sky_radius * torch.sin(theta) * torch.sin(phi)
+            skybox_xyz[:, 2] = sky_radius * torch.cos(phi)
+
+            # Skybox colors
+            skybox_color = sky_color.repeat(num_skybox_points, 1)
+            skybox_color[:, 0] *= 0.7  # Slightly adjust skybox color
+            skybox_color[:, 1] *= 0.8
+            skybox_color[:, 2] *= 0.95
+
+            # Concatenate skybox and original point cloud
+            fused_point_cloud = torch.concat((skybox_xyz, fused_point_cloud), dim=0)
+            fused_color = torch.concat((skybox_color, fused_color), dim=0)
+
+            # Recompute features
+            features = torch.zeros((fused_color.shape[0], 3, (self.max_sh_degree + 1) ** 2)).float().cuda()
+            features[:, :3, 0] = RGB2SH(fused_color).float().cuda()
+            features[:, 3:, 1:] = 0.0
+
+            polar_coord, w, r = self.xyz_to_polar(fused_point_cloud)
+            fused_point_cloud = fused_point_cloud * w.unsqueeze(1)
+            w = self.w_inverse_activation(w)
+
+            dist2 = torch.clamp_min(distCUDA2(fused_point_cloud), 0.0000001)
+            # dist2[:num_skybox_points] *= 10  # Skybox points have larger distance
+            # dist2[num_skybox_points:] = torch.clamp_max(dist2[num_skybox_points:], 10)
+
+            scales = torch.log(torch.sqrt(dist2) / r)[..., None].repeat(1, 3)
+            rots = torch.zeros((fused_point_cloud.shape[0], 4), device="cuda")
+            rots[:, 0] = 1
+
+            opacities = inverse_sigmoid(0.1 * torch.ones((fused_point_cloud.shape[0], 1), dtype=torch.float, device="cuda"))
+
+            self._xyz = nn.Parameter(fused_point_cloud.requires_grad_(True))
+            self._w = nn.Parameter(w.requires_grad_(True))  # (P, 1) dist to world origin
+            self._features_dc = nn.Parameter(features[:, :, 0:1].transpose(1, 2).contiguous().requires_grad_(True))
+            self._features_rest = nn.Parameter(features[:, :, 1:].transpose(1, 2).contiguous().requires_grad_(True))
+            self._scaling = nn.Parameter(scales.requires_grad_(True))
+            self._rotation = nn.Parameter(rots.requires_grad_(True))
+            self._opacity = nn.Parameter(opacities.requires_grad_(True))
+            self.max_radii2D = torch.zeros((self.get_xyz.shape[0]), device="cuda")
+
+
 
     def training_setup(self, training_args):
         self.percent_dense = training_args.percent_dense
