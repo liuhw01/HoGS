@@ -96,7 +96,8 @@ Below is an example setup process based on Ubuntu 20.04 with CUDA 11.3.1 and cuD
 docker pull nvidia/cuda:11.3.1-cudnn8-devel-ubuntu20.04
 
 # Start the container
-docker run --gpus all -it nvidia/cuda:11.3.1-cudnn8-devel-ubuntu20.04 /bin/bash
+docker run -itd --name HoGS_env --gpus all --shm-size=16g nvidia/cuda:11.3.1-cudnn8-devel-ubuntu20.04 /bin/bash
+docker attach HoGS_env
 
 # Inside the container:
 apt-get update && apt-get upgrade -y
