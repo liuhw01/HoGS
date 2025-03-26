@@ -204,8 +204,8 @@ class GaussianModel:
             w = self.w_inverse_activation(w)
 
             dist2 = torch.clamp_min(distCUDA2(fused_point_cloud), 0.0000001)
-            # dist2[:num_skybox_points] *= 10  # Skybox points have larger distance
-            # dist2[num_skybox_points:] = torch.clamp_max(dist2[num_skybox_points:], 10)
+            dist2[:num_skybox_points] *= 10  # Skybox points have larger distance
+            dist2[num_skybox_points:] = torch.clamp_max(dist2[num_skybox_points:], 10)
 
             scales = torch.log(torch.sqrt(dist2) / r)[..., None].repeat(1, 3)
             rots = torch.zeros((fused_point_cloud.shape[0], 4), device="cuda")
