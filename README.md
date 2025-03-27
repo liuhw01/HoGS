@@ -117,7 +117,7 @@ conda activate gaussian_splatting
 
 #### Modifications
 
-If you can afford the disk space, we recommend using our environment files for setting up a training environment identical to ours. If you want to make modifications, please note that major version changes might affect the results of our method. However, our (limited) experiments suggest that the codebase works just fine inside a more up-to-date environment (Python 3.8, PyTorch 2.0.0, CUDA 12). Make sure to create an environment where PyTorch and its CUDA runtime version match and the installed CUDA SDK has no major version difference with PyTorch's CUDA version.
+If you can afford the disk space, we recommend using our environment files for setting up a training environment identical to ours. If you want to make modifications, please note that major version changes might affect the results of our method.
 
 #### Known Issues
 
@@ -216,12 +216,7 @@ By default, the trained models use all available images in the dataset. To train
 python train.py -s <path to COLMAP or NeRF Synthetic dataset> --eval # Train with train/test split
 python render.py -m <path to trained model> # Generate renderings
 python metrics_w_depth.py -m <path to trained model> -d <path to depth map> # Compute overall error metrics on renderings and near and far metrics based on depth map
-```
-
-If you want to evaluate our [pre-trained models](https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/datasets/pretrained/models.zip), you will have to download the corresponding source data sets and indicate their location to ```render.py``` with an additional ```--source_path/-s``` flag. Note: The pre-trained models were created with the release codebase. This code base has been cleaned up and includes bugfixes, hence the metrics you get from evaluating them will differ from those in the paper.
-```shell
-python render.py -m <path to pre-trained model> -s <path to COLMAP dataset>
-python metrics_w_depth.py -m <path to trained model> -d <path to depth map>
+python metrics.py -m <path to trained model> # Compute overall error metrics without using depth map
 ```
 
 <details>
