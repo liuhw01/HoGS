@@ -63,7 +63,7 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
         cov3D_precomp = pc.get_covariance(scaling_modifier)
     else:
         xyz = pc.get_xyz
-        scales = pc.get_scaling / w.unsqueeze(1) * torch.norm(xyz, dim=1).unsqueeze(1)
+        scales = pc.get_scaling / w.unsqueeze(1)# * torch.norm(xyz, dim=1).unsqueeze(1)
         rotations = pc.get_rotation
 
     # If precomputed colors are provided, use them. Otherwise, if it is desired to precompute colors
