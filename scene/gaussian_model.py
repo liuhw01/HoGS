@@ -298,7 +298,7 @@ class GaussianModel:
         f_dc = self._features_dc.detach().transpose(1, 2).flatten(start_dim=1).contiguous().cpu().numpy()
         f_rest = self._features_rest.detach().transpose(1, 2).flatten(start_dim=1).contiguous().cpu().numpy()
         opacities = self._opacity.detach().cpu().numpy()
-        scale_w = self.get_scaling * self.get_w_inv.unsqueeze(1) * torch.norm(self.get_xyz, dim=1).unsqueeze(1)
+        scale_w = self.get_scaling * self.get_w_inv.unsqueeze(1)# * torch.norm(self.get_xyz, dim=1).unsqueeze(1)
         scale_w_log = torch.log(scale_w)
         scale = scale_w_log.detach().cpu().numpy()
         w = self.get_w.unsqueeze(1).detach().cpu().numpy()
@@ -503,7 +503,7 @@ class GaussianModel:
         padded_grad = torch.zeros((n_init_points), device="cuda")
         padded_grad[:grads.shape[0]] = grads.squeeze()
         selected_pts_mask = torch.where(padded_grad >= grad_threshold, True, False)
-        scaling = self.get_scaling / self.get_w.unsqueeze(1) * torch.norm(self.get_xyz, dim=1).unsqueeze(1)
+        scaling = self.get_scaling / self.get_w.unsqueeze(1)# * torch.norm(self.get_xyz, dim=1).unsqueeze(1)
         selected_pts_mask = torch.logical_and(selected_pts_mask,
                                               torch.max(scaling, dim=1).values > self.percent_dense * scene_extent)
 
@@ -538,7 +538,7 @@ class GaussianModel:
     def densify_and_clone(self, grads, grad_threshold, scene_extent):
         # Extract points that satisfy the gradient condition
         selected_pts_mask = torch.where(torch.norm(grads, dim=-1) >= grad_threshold, True, False)
-        scaling = self.get_scaling / self.get_w.unsqueeze(1) * torch.norm(self.get_xyz, dim=1).unsqueeze(1)
+        scaling = self.get_scaling / self.get_w.unsqueeze(1)# * torch.norm(self.get_xyz, dim=1).unsqueeze(1)
         selected_pts_mask = torch.logical_and(selected_pts_mask,
                                               torch.max(scaling, dim=1).values <= self.percent_dense * scene_extent)
 
