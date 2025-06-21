@@ -23,6 +23,23 @@ from utils.graphics_utils import BasicPointCloud
 from utils.general_utils import strip_symmetric, build_scaling_rotation
 
 
+# 🧠 1. 引入齐次高斯（Homogeneous Gaussians）
+# 新增了 w 分量来支持齐次坐标系建模：
+# _w：表示每个高斯点到世界原点的距离，用于控制其相对缩放比例。
+# get_means3D：由 xyz * (1/w) 得到实际位置。
+# get_points_hom：返回 [x, y, z, w]，用于投影几何优化。
+# 初始化时：w = 1 / ||p||（p 为世界坐标），并通过 log 表示为可学习参数，优化时使用 exp(w) 保持正值。
+
+# 📐 2. 重定义高斯协方差构建方式
+# def build_covariance_from_scaling_rotation(...)
+# 使用带有 w 缩放的协方差计算逻辑（可解释为真实物理尺度上的高斯宽度），而不是固定尺度。
+
+# 🔄 3. 坐标变换新增支持极坐标系统（Polar Coordinates）
+# xyz_to_polar 和 xyz_to_polar_np：将笛卡尔坐标转换为极坐标（θ, ϕ, 1/r），用于齐次初始化和 skybox 点构造等操作。
+
+# 🌌 4. Skybox 支持（用于远处背景建模）
+# create_from_pcd(..., use_skybox=True)：会随机生成大量远距离球壳点，模拟天空盒，并融合到主场景中，改进背景还原能力。
+
 class GaussianModel:
 
     def setup_functions(self):
