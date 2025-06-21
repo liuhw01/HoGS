@@ -50,6 +50,7 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
 
     rasterizer = GaussianRasterizer(raster_settings=raster_settings)
 
+####updata
     w = pc.get_w
     means2D = screenspace_points
     opacity = pc.get_opacity
@@ -63,6 +64,16 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
         cov3D_precomp = pc.get_covariance(scaling_modifier)
     else:
         xyz = pc.get_xyz
+        
+####updata
+# w分量只影响scale
+# 距离越远 → $w$ 越小 → s / w 越大 → 屏幕上的投影面积越大（变清晰）
+# 在 HoGS 中，高斯的位置 $\mu$ 保持不变，而是通过 $s/w$ 的方式来「抵消」距离带来的缩放影响，以实现远近一致。
+    # 在标准 3DGS 中：
+    #     相同的 scale，越远的高斯 → 越小 → 渲染模糊 or 不显著
+    # 而在 HoGS 中：
+    #     相同的 scale，不同距离的高斯通过 $s / w$ 归一化 → 屏幕上的投影尺寸一致
+    # 这就解决了原始 3DGS 中「远处高斯模糊、缩小、难以优化」的问题。
         scales = pc.get_scaling / w.unsqueeze(1)# * torch.norm(xyz, dim=1).unsqueeze(1)
         rotations = pc.get_rotation
 
