@@ -68,7 +68,16 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
     first_iter = 0
     tb_writer = prepare_output_and_logger(dataset)
+    
+    # 🚀 作用：
+        # 初始化一个高斯点云模型 GaussianModel，用于表示整个场景的几何与外观。
     gaussians = GaussianModel(dataset.sh_degree)
+    
+    # 🚀 作用：
+    #     初始化一个 Scene 对象，它作为训练/渲染的 数据与高斯模型的桥梁，负责：
+    #     加载和组织所有视图相机的参数（intrinsics / extrinsics）
+    #     管理与高斯模型之间的交互（比如视锥剔除、可见性评估）
+    #     提供训练迭代中需要的数据（图像、位姿、前向遮挡信息等）
     scene = Scene(dataset, gaussians)
     gaussians.training_setup(opt)
     if checkpoint:
